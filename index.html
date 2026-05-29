@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🏕️ Поездка на озеро</title>
+    <title>🏕️ Поездка на Таватуй</title>
     <style>
       :root {
         --bg: #0f1117;
@@ -626,6 +626,7 @@
       let currentTab = "all";
       let allItems = {};
       const getName = () => localStorage.getItem("lake_name") || "";
+      const nameKey = (n) => encodeURIComponent(n).replace(/%/g, '_');
       Object.defineProperty(window, "myName", {
         get: () => getName(),
         set: () => {},
@@ -635,7 +636,6 @@
       window._db = { itemsRef, update, remove, ref, db };
 
       // Connection status
-      import { onValue as ov } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
       const connRef = ref(db, ".info/connected");
       onValue(connRef, (snap) => {
         const connected = snap.val();
@@ -695,7 +695,7 @@
         const item = allItems[id];
         if (!item) return;
         const voters = item.voters || {};
-        const prev = voters[btoa(myName)] || 0;
+        const prev = voters[nameKey(myName)] || 0;
         let delta = 0;
         let newVote = dir;
         if (prev === dir) {
@@ -707,7 +707,7 @@
         }
         const updates = {};
         updates[`items/${id}/votes`] = (item.votes || 0) + delta;
-        updates[`items/${id}/voters/${btoa(myName)}`] = newVote;
+        updates[`items/${id}/voters/${nameKey(myName)}`] = newVote;
         update(ref(db), updates);
       };
 
@@ -735,7 +735,12 @@
 
         // Update budget
         const allEntries = Object.values(allItems);
-        const total = allEntries.reduce((s, v) => s + (v.price || 0), 0);
+        const total = allEntries.reduce((s, v) => {
+          const altsArr = Object.values(v.alternatives || {}).sort((a,b) => (b.votes||0)-(a.votes||0));
+          const winnerPrice = altsArr.length > 0 && (altsArr[0].votes||0) > 0 && altsArr[0].price != null
+            ? altsArr[0].price : null;
+          return s + (winnerPrice ?? v.price ?? 0);
+        }, 0);
         const bar = document.getElementById("budgetBar");
         if (total > 0) {
           bar.style.display = "flex";
@@ -758,7 +763,7 @@
 
         list.innerHTML = items
           .map(([id, item]) => {
-            const myVote = (item.voters || {})[btoa(myName)] || 0;
+            const myVote = (item.voters || {})[nameKey(myName)] || 0;
             const score = item.votes || 0;
             const scoreClass = score > 0 ? "pos" : score < 0 ? "neg" : "";
 
@@ -766,8 +771,9 @@
             const alts = Object.entries(item.alternatives || {})
               .sort((a,b) => (b[1].votes||0) - (a[1].votes||0));
             const winnerAltId = alts.length > 0 ? alts[0][0] : null;
+            const winnerAlt = alts.length > 0 && (alts[0][1].votes||0) > 0 ? alts[0][1] : null;
             const altsHtml = alts.map(([aid, alt]) => {
-              const myAltVote = (alt.voters || {})[btoa(myName)] || 0;
+              const myAltVote = (alt.voters || {})[nameKey(myName)] || 0;
               const altScore = alt.votes || 0;
               const isWinner = aid === winnerAltId && altScore > 0;
               return `<div class="alt-item ${isWinner ? 'winner' : ''}">
@@ -777,7 +783,7 @@
                   <button class="altVoteBtn down ${myAltVote===-1?'active':''}" onclick="voteAlt('${id}','${aid}',-1)">▼</button>
                 </div>
                 <div style="flex:1">
-                  <span class="alt-name">${esc(alt.name)}</span>
+                  ${alt.qty ? `<span class="alt-name">📦 ${esc(alt.qty)}</span>` : ''}
                   ${alt.price != null ? `<span class="alt-price"> · ${Number(alt.price).toLocaleString('ru-RU')} ₽</span>` : ''}
                   <span class="alt-author"> · от ${esc(alt.author)}</span>
                 </div>
@@ -799,8 +805,8 @@
               <button class="delete-btn" onclick="deleteItem('${id}')" title="Удалить">✕</button>
             </div>
             <div class="item-meta">
-              ${item.qty ? `<span class="item-qty">📦 ${esc(item.qty)}</span>` : ""}
-              ${item.price != null ? `<span class="item-qty" style="background:rgba(62,207,142,.15);color:var(--green);">💰 ${Number(item.price).toLocaleString("ru-RU")} ₽</span>` : ""}
+              ${winnerAlt?.qty ? `<span class="item-qty" style="background:rgba(62,207,142,.15);color:var(--green);">📦 ${esc(winnerAlt.qty)}</span>` : item.qty ? `<span class="item-qty">📦 ${esc(item.qty)}</span>` : ""}
+              ${winnerAlt?.price != null ? `<span class="item-qty" style="background:rgba(62,207,142,.25);color:var(--green);">🏆 ${Number(winnerAlt.price).toLocaleString("ru-RU")} ₽</span>` : item.price != null ? `<span class="item-qty" style="background:rgba(62,207,142,.15);color:var(--green);">💰 ${Number(item.price).toLocaleString("ru-RU")} ₽</span>` : ""}
               <span class="item-cat">${catLabel[item.cat] || item.cat}</span>
               <span>от ${esc(item.author)}</span>
             </div>
@@ -808,12 +814,12 @@
             <div class="alts-section">
               ${altsHtml}
               <div class="add-alt-row" id="altForm-${id}" style="display:none">
-                <input type="text" id="altName-${id}" placeholder="Твой вариант..." maxlength="60" />
+                <input type="text" id="altQty-${id}" placeholder="Кол-во (напр. 3 кг)" maxlength="40" />
                 <input type="number" id="altPrice-${id}" placeholder="Цена ₽" min="0" style="max-width:90px" />
                 <button onclick="addAlt('${id}')">＋ Добавить</button>
               </div>
               <span class="alts-toggle" onclick="toggleAltForm('${id}')">
-                <span id="altToggleIcon-${id}">＋</span> предложить вариант
+                <span id="altToggleIcon-${id}">＋</span> предложить кол-во
               </span>
             </div>
           </div>
@@ -828,22 +834,22 @@
         const visible = form.style.display !== 'none';
         form.style.display = visible ? 'none' : 'flex';
         icon.textContent = visible ? '＋' : '−';
-        if (!visible) document.getElementById(`altName-${itemId}`).focus();
+        if (!visible) document.getElementById(`altQty-${itemId}`).focus();
       };
 
       window.addAlt = function(itemId) {
         const myName = getName();
         if (!myName) { toast('Сначала введи имя!'); return; }
-        const nameEl = document.getElementById(`altName-${itemId}`);
+        const qtyEl = document.getElementById(`altQty-${itemId}`);
         const priceEl = document.getElementById(`altPrice-${itemId}`);
-        const name = nameEl.value.trim();
-        if (!name) { toast('Введи вариант!'); return; }
+        const qty = qtyEl.value.trim();
         const priceRaw = parseFloat(priceEl.value);
         const price = isNaN(priceRaw) ? null : priceRaw;
+        if (!qty && price == null) { toast('Укажи кол-во или цену!'); return; }
         push(ref(db, `items/${itemId}/alternatives`), {
-          name, price, author: myName, votes: 0, voters: {}, ts: Date.now()
+          qty, price, author: myName, votes: 0, voters: {}, ts: Date.now()
         });
-        nameEl.value = '';
+        qtyEl.value = '';
         priceEl.value = '';
         document.getElementById(`altForm-${itemId}`).style.display = 'none';
         document.getElementById(`altToggleIcon-${itemId}`).textContent = '＋';
@@ -855,12 +861,12 @@
         if (!myName) { toast('Сначала введи имя!'); return; }
         const alt = (allItems[itemId]?.alternatives || {})[altId];
         if (!alt) return;
-        const prev = (alt.voters || {})[btoa(myName)] || 0;
+        const prev = (alt.voters || {})[nameKey(myName)] || 0;
         const newVote = prev === dir ? 0 : dir;
         const delta = newVote - prev;
         const updates = {};
         updates[`items/${itemId}/alternatives/${altId}/votes`] = (alt.votes || 0) + delta;
-        updates[`items/${itemId}/alternatives/${altId}/voters/${btoa(myName)}`] = newVote;
+        updates[`items/${itemId}/alternatives/${altId}/voters/${nameKey(myName)}`] = newVote;
         update(ref(db), updates);
       };
 
