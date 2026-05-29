@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🏕️ Поездка на озеро</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --surface2: #22263a;
+        --border: #2e3350;
+        --accent: #4f8ef7;
+        --accent2: #7c5cfc;
+        --green: #3ecf8e;
+        --red: #f76f6f;
+        --yellow: #f7c948;
+        --text: #e8eaf2;
+        --muted: #7c809a;
+        --radius: 14px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", system-ui, sans-serif;
+        min-height: 100vh;
+      }
+
+      /* === OVERLAY === */
+      #nameOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+      .nameCard {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        max-width: 340px;
+        width: 90%;
+      }
+      .nameCard .lake-emoji {
+        font-size: 56px;
+        margin-bottom: 16px;
+      }
+      .nameCard h2 {
+        font-size: 22px;
+        margin-bottom: 6px;
+      }
+      .nameCard p {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+      .nameCard input {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 1.5px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 16px;
+        margin-bottom: 14px;
+        outline: none;
+      }
+      .nameCard input:focus {
+        border-color: var(--accent);
+      }
+      .nameCard button {
+        width: 100%;
+        padding: 13px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .nameCard button:hover {
+        opacity: 0.88;
+      }
+
+      /* === HEADER === */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      header h1 {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      header .who {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .online-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        margin-right: 5px;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* === LAYOUT === */
+      .container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px 16px;
+      }
+
+      /* === TABS === */
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .tab {
+        padding: 8px 16px;
+        border-radius: 30px;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .tab.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(79, 142, 247, 0.1);
+      }
+      .tab:hover:not(.active) {
+        border-color: var(--muted);
+        color: var(--text);
+      }
+
+      /* === ADD FORM === */
+      .addForm {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px;
+        margin-bottom: 24px;
+      }
+      .addForm .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .addForm input,
+      .addForm select {
+        flex: 1;
+        min-width: 140px;
+        padding: 10px 14px;
+        border-radius: 9px;
+        border: 1.5px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        outline: none;
+      }
+      .addForm input:focus,
+      .addForm select:focus {
+        border-color: var(--accent);
+      }
+      .addForm select {
+        min-width: 120px;
+        max-width: 160px;
+        cursor: pointer;
+      }
+      .addForm .submitRow {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .addForm textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 9px;
+        border: 1.5px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        outline: none;
+        resize: none;
+        min-height: 60px;
+        margin-top: 10px;
+      }
+      .addForm textarea:focus {
+        border-color: var(--accent);
+      }
+      .btnPrimary {
+        padding: 10px 22px;
+        border-radius: 9px;
+        border: none;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+      }
+      .btnPrimary:hover {
+        opacity: 0.85;
+      }
+
+      /* === ITEMS === */
+      .section-title {
+        font-size: 13px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 10px;
+      }
+
+      .item {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        transition: border-color 0.2s;
+      }
+      .item:hover {
+        border-color: var(--border);
+      }
+      .item.voted-up {
+        border-color: rgba(62, 207, 142, 0.35);
+      }
+      .item.voted-down {
+        border-color: rgba(247, 111, 111, 0.2);
+      }
+
+      .vote-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        min-width: 40px;
+      }
+      .voteBtn {
+        width: 36px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .voteBtn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .voteBtn.up.active {
+        background: rgba(62, 207, 142, 0.15);
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .voteBtn.down.active {
+        background: rgba(247, 111, 111, 0.12);
+        border-color: var(--red);
+        color: var(--red);
+      }
+      .vote-score {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        min-width: 20px;
+        text-align: center;
+      }
+      .vote-score.pos {
+        color: var(--green);
+      }
+      .vote-score.neg {
+        color: var(--red);
+      }
+
+      .item-body {
+        flex: 1;
+      }
+      .item-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .item-meta {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .item-qty {
+        background: rgba(79, 142, 247, 0.15);
+        color: var(--accent);
+        padding: 2px 8px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .item-cat {
+        background: var(--surface2);
+        padding: 2px 8px;
+        border-radius: 5px;
+        font-size: 12px;
+      }
+      .item-note {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .delete-btn {
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 16px;
+        padding: 2px 4px;
+        border-radius: 5px;
+        transition: color 0.15s;
+        opacity: 0;
+      }
+      .item:hover .delete-btn {
+        opacity: 1;
+      }
+      .delete-btn:hover {
+        color: var(--red);
+      }
+
+      /* === EMPTY === */
+      .empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 40px 20px;
+        font-size: 14px;
+      }
+      .empty .emoji {
+        font-size: 36px;
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      /* === TOAST === */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 22px;
+        font-size: 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* === STATUS BAR === */
+      .status-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 10px 20px;
+        border-top: 1px solid var(--border);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--surface);
+      }
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .status-dot.connected {
+        background: var(--green);
+      }
+      .pb {
+        padding-bottom: 50px;
+      }
+
+      /* === RESPONSIVE === */
+      @media (max-width: 480px) {
+        .addForm select {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Name Overlay -->
+    <div id="nameOverlay">
+      <div class="nameCard">
+        <div class="lake-emoji">🏕️</div>
+        <h2>Поездка на озеро</h2>
+        <p>Как тебя зовут? Все увидят твоё имя рядом с предложениями.</p>
+        <input
+          type="text"
+          id="nameInput"
+          placeholder="Твоё имя..."
+          maxlength="30"
+          autofocus
+        />
+        <button onclick="setName()">Войти →</button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+      <h1>🏕️ Поездка на озеро</h1>
+      <span class="who"
+        ><span class="online-dot"></span><span id="headerName">...</span></span
+      >
+    </header>
+
+    <!-- Main -->
+    <div class="container pb">
+      <!-- Tabs -->
+      <div class="tabs" id="tabs">
+        <button class="tab active" onclick="setTab('all')" data-tab="all">
+          Все
+        </button>
+        <button class="tab" onclick="setTab('food')" data-tab="food">
+          🍖 Еда
+        </button>
+        <button class="tab" onclick="setTab('drinks')" data-tab="drinks">
+          🥤 Напитки
+        </button>
+        <button class="tab" onclick="setTab('gear')" data-tab="gear">
+          ⛺ Снаряжение
+        </button>
+        <button class="tab" onclick="setTab('other')" data-tab="other">
+          📝 Прочее
+        </button>
+      </div>
+
+      <!-- Add form -->
+      <div class="addForm">
+        <div class="row">
+          <input
+            type="text"
+            id="itemName"
+            placeholder="Что взять? (напр., Колбаса)"
+            maxlength="80"
+          />
+          <input
+            type="text"
+            id="itemQty"
+            placeholder="Кол-во (напр., 2 кг)"
+            maxlength="30"
+            style="max-width: 130px"
+          />
+          <select id="itemCat">
+            <option value="food">🍖 Еда</option>
+            <option value="drinks">🥤 Напитки</option>
+            <option value="gear">⛺ Вещи</option>
+            <option value="other">📝 Прочее</option>
+          </select>
+        </div>
+        <textarea
+          id="itemNote"
+          placeholder="Комментарий (необязательно)..."
+          rows="2"
+        ></textarea>
+        <div class="submitRow">
+          <button class="btnPrimary" onclick="addItem()">
+            ＋ Добавить предложение
+          </button>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div id="list"></div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Подключение...</span>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Firebase -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        onValue,
+        update,
+        remove,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+      // ─── ВСТАВЬТЕ ВАШУ FIREBASE КОНФИГУРАЦИЮ ЗДЕСЬ ───────────────────────────
+      const firebaseConfig = {
+        apiKey: "AIzaSyBYue3QHHTrdkGToB317EN2CvW7aRTcWM4",
+        authDomain: "poezdka-na-ozero-7ab6f.firebaseapp.com",
+        databaseURL:
+          "https://poezdka-na-ozero-7ab6f-default-rtdb.firebaseio.com",
+        projectId: "poezdka-na-ozero-7ab6f",
+        storageBucket: "poezdka-na-ozero-7ab6f.firebasestorage.app",
+        messagingSenderId: "573856902873",
+        appId: "1:573856902873:web:89d0eb1f0d44ac68ed98c8",
+        measurementId: "G-VCM7WTZBX6",
+      };
+      // ──────────────────────────────────────────────────────────────────────────
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const itemsRef = ref(db, "items");
+
+      let myName = "";
+      let currentTab = "all";
+      let allItems = {};
+
+      // make these global
+      window._db = { itemsRef, update, remove, ref, db };
+
+      // Connection status
+      import { onValue as ov } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+      const connRef = ref(db, ".info/connected");
+      onValue(connRef, (snap) => {
+        const connected = snap.val();
+        document.getElementById("statusDot").className =
+          "status-dot" + (connected ? " connected" : "");
+        document.getElementById("statusText").textContent = connected
+          ? "Подключено"
+          : "Нет соединения...";
+      });
+
+      // Listen to items
+      onValue(itemsRef, (snap) => {
+        allItems = snap.val() || {};
+        renderList();
+      });
+
+      window.addItem = function () {
+        if (!myName) {
+          toast("Сначала введи имя!");
+          return;
+        }
+        const name = document.getElementById("itemName").value.trim();
+        const qty = document.getElementById("itemQty").value.trim();
+        const cat = document.getElementById("itemCat").value;
+        const note = document.getElementById("itemNote").value.trim();
+        if (!name) {
+          toast("Введи название!");
+          return;
+        }
+        push(itemsRef, {
+          name,
+          qty,
+          cat,
+          note,
+          author: myName,
+          votes: 0,
+          voters: {},
+          ts: Date.now(),
+        });
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemQty").value = "";
+        document.getElementById("itemNote").value = "";
+        toast("Предложение добавлено 👍");
+      };
+
+      window.vote = function (id, dir) {
+        if (!myName) {
+          toast("Сначала введи имя!");
+          return;
+        }
+        const item = allItems[id];
+        if (!item) return;
+        const voters = item.voters || {};
+        const prev = voters[btoa(myName)] || 0;
+        let delta = 0;
+        let newVote = dir;
+        if (prev === dir) {
+          newVote = 0;
+          delta = -dir;
+        } // toggle off
+        else {
+          delta = dir - prev;
+        }
+        const updates = {};
+        updates[`items/${id}/votes`] = (item.votes || 0) + delta;
+        updates[`items/${id}/voters/${btoa(myName)}`] = newVote;
+        update(ref(db), updates);
+      };
+
+      window.deleteItem = function (id) {
+        const item = allItems[id];
+        if (!item) return;
+        if (item.author !== myName) {
+          toast("Можно удалять только свои предложения");
+          return;
+        }
+        if (!confirm(`Удалить "${item.name}"?`)) return;
+        remove(ref(db, `items/${id}`));
+      };
+
+      window.renderList = function () {
+        const list = document.getElementById("list");
+        let items = Object.entries(allItems);
+        if (currentTab !== "all")
+          items = items.filter(([, v]) => v.cat === currentTab);
+        items.sort(
+          (a, b) => (b[1].votes || 0) - (a[1].votes || 0) || b[1].ts - a[1].ts,
+        );
+
+        if (!items.length) {
+          list.innerHTML = `<div class="empty"><span class="emoji">🗒️</span>Предложений пока нет.<br>Добавь первое!</div>`;
+          return;
+        }
+
+        const catLabel = {
+          food: "🍖 Еда",
+          drinks: "🥤 Напитки",
+          gear: "⛺ Снаряжение",
+          other: "📝 Прочее",
+        };
+
+        list.innerHTML = items
+          .map(([id, item]) => {
+            const myVote = (item.voters || {})[btoa(myName)] || 0;
+            const score = item.votes || 0;
+            const scoreClass = score > 0 ? "pos" : score < 0 ? "neg" : "";
+            return `
+        <div class="item ${myVote === 1 ? "voted-up" : myVote === -1 ? "voted-down" : ""}">
+          <div class="vote-col">
+            <button class="voteBtn up ${myVote === 1 ? "active" : ""}" onclick="vote('${id}',1)">▲</button>
+            <span class="vote-score ${scoreClass}">${score}</span>
+            <button class="voteBtn down ${myVote === -1 ? "active" : ""}" onclick="vote('${id}',-1)">▼</button>
+          </div>
+          <div class="item-body">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span class="item-title">${esc(item.name)}</span>
+              <button class="delete-btn" onclick="deleteItem('${id}')" title="Удалить">✕</button>
+            </div>
+            <div class="item-meta">
+              ${item.qty ? `<span class="item-qty">📦 ${esc(item.qty)}</span>` : ""}
+              <span class="item-cat">${catLabel[item.cat] || item.cat}</span>
+              <span>от ${esc(item.author)}</span>
+            </div>
+            ${item.note ? `<div class="item-note">${esc(item.note)}</div>` : ""}
+          </div>
+        </div>`;
+          })
+          .join("");
+      };
+
+      function esc(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+    </script>
+
+    <script>
+      // Name management
+      function setName() {
+        const n = document.getElementById("nameInput").value.trim();
+        if (!n) {
+          document.getElementById("nameInput").focus();
+          return;
+        }
+        myName = n;
+        localStorage.setItem("lake_name", n);
+        document.getElementById("headerName").textContent = n;
+        document.getElementById("nameOverlay").style.display = "none";
+        if (window.renderList) renderList();
+      }
+
+      document.getElementById("nameInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") setName();
+      });
+
+      // Auto-fill name
+      const saved = localStorage.getItem("lake_name");
+      if (saved) {
+        document.getElementById("nameInput").value = saved;
+        // slight delay to let Firebase init
+        setTimeout(() => setName(), 300);
+      }
+
+      // Tab management
+      function setTab(tab) {
+        currentTab = tab;
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.toggle("active", t.dataset.tab === tab));
+        if (window.renderList) renderList();
+      }
+
+      // Toast
+      function toast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.remove("show"), 2500);
+      }
+
+      // Enter to submit
+      document.getElementById("itemName").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          document.getElementById("itemQty").focus();
+        }
+      });
+    </script>
+  </body>
+</html>
